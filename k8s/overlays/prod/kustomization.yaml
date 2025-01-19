@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../../base
+images:
+  - name: ${IMAGE}
+    newName: ${AWS_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/wiki-repo
+    newTag: ${IMAGE_TAG}
