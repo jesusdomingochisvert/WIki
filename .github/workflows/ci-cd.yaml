@@ -14,14 +14,13 @@ on:
 jobs:
   build-and-deploy:
     name: Build and Deploy
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         environment: [dev, staging, prod]
-        branch: [dev, staging, prod]
-    runs-on: ubuntu-latest
-    if: github.ref == format('refs/heads/{0}', matrix.branch)
+        branch: [dev, staging, master]
     steps:
-      - name: Check branch
+      - name: Check branch and environment
         run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
       - name: Checkout code
         uses: actions/checkout@v3
