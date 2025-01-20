@@ -23,9 +23,15 @@ jobs:
       contents: read
     strategy:
       matrix:
-        environment: [dev, staging, prod]
+        include:
+          - environment: dev
+            branch: dev
+          - environment: staging
+            branch: staging
+          - environment: prod
+            branch: master
+    if: ${{ matrix.branch == github.ref_name }}
 
-        branch: [dev, staging, master]
     steps:
       - name: Check branch and environment
 
