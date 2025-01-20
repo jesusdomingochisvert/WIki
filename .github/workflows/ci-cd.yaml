@@ -32,17 +32,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug GitHub Context
-        run: |
-          echo "GitHub Context:"
-          jq -r '.' <<< '${{ toJSON(github) }}'
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
           role-session-name: GitHubActionsSession
+        timeout-minutes: 5
 
       - name: Debug AWS Identity
         run: aws sts get-caller-identity
