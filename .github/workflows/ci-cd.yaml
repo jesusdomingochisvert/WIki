@@ -45,7 +45,7 @@ jobs:
       - name: Build and push Docker image
         id: build-image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: 571600859033.dkr.ecr.us-east-2.amazonaws.com/wiki-repo
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/wiki:$IMAGE_TAG .
