@@ -27,8 +27,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: AKIAYKFQQ56M7FUCSEH7
-          aws-secret-access-key: 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
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
       - name: Login to Amazon ECR
         id: login-ecr
@@ -45,11 +44,11 @@ jobs:
       - name: Build and push Docker image
         id: build-image
         env:
-          ECR_REGISTRY: 571600859033.dkr.ecr.us-east-2.amazonaws.com/wiki-repo
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t 571600859033.dkr.ecr.us-east-2.amazonaws.com/wiki-repo/wiki:$IMAGE_TAG .
-          docker push 571600859033.dkr.ecr.us-east-2.amazonaws.com/wiki-repo/wiki:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/wiki:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/wiki:$IMAGE_TAG
       - name: Update image tag in variables.yaml
         run: |
           yq e ".image_tag = \"${{ github.sha }}\"" k8s/base/app/variables.yaml -i
