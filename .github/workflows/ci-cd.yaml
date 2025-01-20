@@ -25,10 +25,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Configure AWS Credentials
-        uses: aws-actions/aws-sdk@v3
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-region: us-east-2
-          role-arn: arn:aws:iam::571600859033:role/GitHubActionsECRRole
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
