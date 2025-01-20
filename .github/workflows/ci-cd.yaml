@@ -15,10 +15,16 @@ jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     strategy:
       matrix:
         environment: [dev, staging, prod]
         branch: [dev, staging, master]
+
     steps:
       - name: Check branch and environment
         run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
