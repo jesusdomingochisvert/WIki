@@ -15,30 +15,30 @@ jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     permissions:
       id-token: write
-      contents: read
 
+      contents: read
     strategy:
       matrix:
         environment: [dev, staging, prod]
-        branch: [dev, staging, master]
 
+        branch: [dev, staging, master]
     steps:
       - name: Check branch and environment
+
         run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
-
       - name: Checkout code
-        uses: actions/checkout@v3
 
+        uses: actions/checkout@v3
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
           role-session-name: GitHubActionsSession
-        timeout-minutes: 5
 
       - name: Debug AWS Identity
         run: aws sts get-caller-identity
