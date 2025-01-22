@@ -6,51 +6,57 @@ on:
       - dev
       - staging
       - master
+
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  checks-debugs:
+    name: Checks and Debugs
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    permissions:
-      id-token: write
-      contents: read
-
-    strategy:
-      matrix:
-        include:
-          - environment: dev
-            branch: dev
-          - environment: staging
-            branch: staging
-          - environment: prod
-            branch: master
-    if: ${{ github.base_ref == matrix.base_branch }}
-
     steps:
       - name: Debug Info
         run: |
-          echo "Event name:   ${{ github.event_name }}"
-          echo "Base ref:     ${{ github.base_ref }}"
-          echo "Head ref:     ${{ github.head_ref }}"
-          echo "Environment:  ${{ matrix.environment }}"
+          echo "Event name: ${{ github.event_name }}"
+          echo "Base ref: ${{ github.base_ref }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "Environment: ${{ matrix.environment }}"
           echo "Matrix branch:${{ matrix.base_branch }}"
 
       - name: Check branch and environment
         run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
 
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Debug AWS Identity
+        run: aws sts get-caller-identity
+
+      - name: Check Go Version
+        run: go version
+
+  tests-lints:
+    needs: [checks-debugs]
+    name: Tests and Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Lint
+        run: echo "Linting..."
+
+      - name: Run Tests
+        run: echo "Testing..."
+
+  aws-build:
+    needs: [tests-lints]
+    name: AWS Stuffs and Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
           role-session-name: GitHubActionsSession
-
-      - name: Debug AWS Identity
-        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -66,7 +72,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -75,11 +81,31 @@ jobs:
           docker build -t $ECR_REGISTRY/wiki:$IMAGE_TAG .
           docker push $ECR_REGISTRY/wiki:$IMAGE_TAG
 
-      - name: Update image tag in variables.yaml
+  deploy-dev:
+    needs: [aws-build]
+    if: ${{ github.base_ref == 'dev' }}
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
+          aws-region: us-east-2
+          role-session-name: GitHubActionsSession
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Update Image Tag in variables.yaml
         run: |
           yq e ".image_tag = \"${{ github.sha }}\"" k8s/base/app/variables.yaml -i
 
-      - name: Deploy to ${{ matrix.environment }}
+      - name: Deploy to Dev
         run: |
-          cd k8s/overlays/${{ matrix.environment }}
-          kustomize build . | kubectl apply -f - -n ${{ matrix.environment }}
+          cd k8s/overlays/dev
+          kustomize build . | kubectl apply -f - -n dev
