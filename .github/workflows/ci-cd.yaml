@@ -26,9 +26,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Debug AWS Identity
-        run: aws sts get-caller-identity
-
       - name: Check Go Version
         run: go version
 
@@ -45,7 +42,7 @@ jobs:
 
   aws-build:
     needs: [tests-lints]
-    name: AWS Stuffs and Build Docker Image
+    name: Build Docker Image
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -57,6 +54,9 @@ jobs:
           role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
           role-session-name: GitHubActionsSession
+
+      - name: Debug AWS Identity
+        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -84,7 +84,7 @@ jobs:
   deploy-dev:
     needs: [aws-build]
     if: ${{ github.base_ref == 'dev' }}
-    name: Build and Deploy
+    name: Deploy Kubernetes
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -101,7 +101,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Update Image Tag in variables.yaml
+      - name: Update ImageTag in variables.yaml
         run: |
           yq e ".image_tag = \"${{ github.sha }}\"" k8s/base/app/variables.yaml -i
 
