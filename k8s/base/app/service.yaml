@@ -7,6 +7,6 @@ spec:
     app: ${APP_NAME}
   ports:
     - protocol: TCP
-      port: ${SERVER_PORT}
-      targetPort: ${CONTAINER_PORT}
+      port: 80
+      targetPort: 8080
   type: ClusterIP

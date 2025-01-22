@@ -16,7 +16,7 @@ spec:
         - name: ${APP_NAME}-container
           image: ${IMAGE}
           ports:
-            - containerPort: ${CONTAINER_PORT}
+            - containerPort: 8080
           resources:
             requests:
               cpu: 100m
