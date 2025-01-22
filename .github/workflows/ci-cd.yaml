@@ -1,11 +1,6 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - dev
-      - staging
-      - master
   pull_request:
     branches:
       - dev
@@ -30,15 +25,23 @@ jobs:
             branch: staging
           - environment: prod
             branch: master
-    if: ${{ matrix.branch == github.ref_name }}
+    if: ${{ github.base_ref == matrix.base_branch }}
 
     steps:
+      - name: Debug Info
+        run: |
+          echo "Event name:   ${{ github.event_name }}"
+          echo "Base ref:     ${{ github.base_ref }}"
+          echo "Head ref:     ${{ github.head_ref }}"
+          echo "Environment:  ${{ matrix.environment }}"
+          echo "Matrix branch:${{ matrix.base_branch }}"
+
       - name: Check branch and environment
-
         run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
-      - name: Checkout code
 
+      - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
