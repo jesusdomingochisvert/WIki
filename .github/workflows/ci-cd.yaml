@@ -103,6 +103,10 @@ jobs:
         run: |
           yq e ".image_tag = \"${{ github.sha }}\"" k8s/base/app/variables.yaml -i
 
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --name wiki-cluster --region us-east-2
+
       - name: Deploy to Dev
         run: |
           cd k8s/overlays/dev
