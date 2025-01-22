@@ -12,17 +12,6 @@ jobs:
     name: Checks and Debugs
     runs-on: ubuntu-latest
     steps:
-      - name: Debug Info
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Base ref: ${{ github.base_ref }}"
-          echo "Head ref: ${{ github.head_ref }}"
-          echo "Environment: ${{ matrix.environment }}"
-          echo "Matrix branch:${{ matrix.base_branch }}"
-
-      - name: Check branch and environment
-        run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
-
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -34,6 +23,9 @@ jobs:
     name: Tests and Lints
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Run Lint
         run: echo "Linting..."
 
@@ -48,6 +40,9 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -78,8 +73,8 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/wiki:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/wiki:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/WIki:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/WIki:$IMAGE_TAG
 
   deploy-dev:
     needs: [aws-build]
@@ -90,6 +85,9 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
