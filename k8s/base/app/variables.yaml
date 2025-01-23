@@ -1,4 +1,4 @@
-APP_NAME: WIki
+APP_NAME: wiki
 AWS_ID: 571600859033
 AWS_REGION: us-east-2
 IMAGE_NAME: ${AWS_ID}.dkr.ecs.${AWS_REGION}.amazonaws.com/wiki-repo

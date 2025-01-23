@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: WIki
+  name: wiki
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: WIki
+      app: wiki
   template:
     metadata:
       labels:
-        app: WIki
+        app: wiki
     spec:
       containers:
-        - name: WIki
+        - name: wiki
           image: ${IMAGE}
           ports:
             - containerPort: 8080

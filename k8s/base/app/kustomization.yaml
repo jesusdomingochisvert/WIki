@@ -4,6 +4,6 @@ resources:
   - deployment.yaml
   - service.yaml
 configMapGenerator:
-  - name: WIki
+  - name: wiki
     files:
       - variables.yaml
