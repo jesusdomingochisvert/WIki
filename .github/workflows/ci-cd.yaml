@@ -1,51 +1,120 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - dev
-      - staging
-      - master
   pull_request:
     branches:
       - dev
       - staging
       - master
+
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
-    strategy:
-      matrix:
-        environment: [dev, staging, prod]
-        branch: [dev, staging, prod]
+  checks-debugs:
+    name: Checks and Debugs
     runs-on: ubuntu-latest
-    if: github.ref == format('refs/heads/{0}', matrix.branch)
     steps:
-      - name: Check branch
-        run: echo "Deploying to ${{ matrix.environment }} on branch ${{ matrix.branch }}"
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Check Go Version
+        run: go version
+
+  tests-lints:
+    needs: [checks-debugs]
+    name: Tests and Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Lint
+        run: echo "Linting..."
+
+      - name: Run Tests
+        run: echo "Testing..."
+
+  aws-build:
+    needs: [tests-lints]
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
           aws-region: us-east-2
+          role-session-name: GitHubActionsSession
+
+      - name: Debug AWS Identity
+        run: aws sts get-caller-identity
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-      - name: Build and push Docker image
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build and Push Docker image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/wiki:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/wiki:$IMAGE_TAG
-      - name: Update image tag in variables.yaml
+          docker build -t $ECR_REGISTRY/wiki-repo:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/wiki-repo:$IMAGE_TAG
+
+  deploy-dev:
+    needs: [aws-build]
+    if: ${{ github.base_ref == 'dev' }}
+    name: Deploy Kubernetes
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials (ECR)
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsECRRole
+          aws-region: us-east-2
+          role-session-name: GitHubActionsSession
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Update ImageTag in variables.yaml
         run: |
           yq e ".image_tag = \"${{ github.sha }}\"" k8s/base/app/variables.yaml -i
-      - name: Deploy to ${{ matrix.environment }}
+
+      - name: Configure AWS Credentials (EKS)
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::571600859033:role/GitHubActionsEKSRole
+          aws-region: us-east-2
+          role-session-name: GitHubActionsEKSSession
+
+      - name: Update kubeconfig for EKS
         run: |
-          cd k8s/overlays/${{ matrix.environment }}
-          kustomize build . | kubectl apply -f - -n ${{ matrix.environment }}
+          aws eks update-kubeconfig --name wiki-cluster --region us-east-2
+
+      - name: Deploy to Dev
+        run: |
+          cd k8s/overlays/dev
+          kustomize build . | kubectl apply -f - -n dev
