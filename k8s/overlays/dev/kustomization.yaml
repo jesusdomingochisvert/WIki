@@ -5,5 +5,5 @@ resources:
   - namespace.yaml
 images:
   - name: ${IMAGE}
-    newName: ${AWS_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/wiki-repo
-    newTag: ${IMAGE_TAG}
+    newName: $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/wiki-repo
+    newTag: $IMAGE_TAG
