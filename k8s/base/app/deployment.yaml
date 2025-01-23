@@ -13,7 +13,7 @@ spec:
         app: WIki
     spec:
       containers:
-        - name: WIki-container
+        - name: WIki
           image: ${IMAGE}
           ports:
             - containerPort: 8080
