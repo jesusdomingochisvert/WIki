@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/golang/mock/gomock"
-	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/entities"
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/mocks"
+	"github.com/jesusdomingochisvert/WIki/internal/features/users/infrastructure/db/schema"
 	"testing"
 )
 
@@ -27,15 +27,15 @@ func TestGetAllUsers(t *testing.T) {
 		mockCursor.EXPECT().Next(gomock.Any()).Return(true).Times(2)
 		mockCursor.EXPECT().Next(gomock.Any()).Return(false)
 
-		user1 := entities.User{ID: "1", Name: "test1", Email: "test1@test.com", Username: "test1", Password: "test1"}
-		user2 := entities.User{ID: "2", Name: "test2", Email: "test2@test.com", Username: "test2", Password: "test2"}
+		userSchema1 := schema.UserSchema{ID: "1", Name: "test1", Email: "test1@test.com", Username: "test1", Password: "test1"}
+		userSchema2 := schema.UserSchema{ID: "2", Name: "test2", Email: "test2@test.com", Username: "test2", Password: "test2"}
 
-		mockCursor.EXPECT().Decode(gomock.Any()).DoAndReturn(func(user *entities.User) error {
-			*user = user1
+		mockCursor.EXPECT().Decode(gomock.Any()).DoAndReturn(func(userSchema *schema.UserSchema) error {
+			*userSchema = userSchema1
 			return nil
 		}).Times(1)
-		mockCursor.EXPECT().Decode(gomock.Any()).DoAndReturn(func(user *entities.User) error {
-			*user = user2
+		mockCursor.EXPECT().Decode(gomock.Any()).DoAndReturn(func(userSchema *schema.UserSchema) error {
+			*userSchema = userSchema2
 			return nil
 		}).Times(1)
 
@@ -76,6 +76,39 @@ func TestGetAllUsers(t *testing.T) {
 		}
 	})
 
+	t.Run("No documents found", func(t *testing.T) {
+		mockCursor := mocks.NewMockCursor(ctrl)
+
+		mockCollection.
+			EXPECT().
+			Find(gomock.Any(), gomock.Any()).
+			Return(mockCursor, nil)
+
+		mockCursor.
+			EXPECT().
+			Next(gomock.Any()).
+			Return(false)
+
+		mockCursor.
+			EXPECT().
+			Err().
+			Return(nil)
+
+		mockCursor.
+			EXPECT().
+			Close(gomock.Any()).
+			Return(nil)
+
+		users, err := repository.GetAllUsers(context.Background())
+		if err != nil {
+			t.Fatalf("No se esperaba error, pero ocurrió: %v", err)
+		}
+
+		if len(users) != 0 {
+			t.Fatalf("Se esperaban 0 usuarios, pero se obtuvieron %d", len(users))
+		}
+	})
+
 	t.Run("Error al decodificar usuario", func(t *testing.T) {
 		mockCursor := mocks.NewMockCursor(ctrl)
 
@@ -107,6 +140,38 @@ func TestGetAllUsers(t *testing.T) {
 
 		if users != nil {
 			t.Fatalf("Se esperaba nil para users, pero se obtuvo: %v", users)
+		}
+	})
+
+	t.Run("Cursor returns error after iteration", func(t *testing.T) {
+		mockCursor := mocks.NewMockCursor(ctrl)
+
+		mockCollection.
+			EXPECT().
+			Find(gomock.Any(), gomock.Any()).
+			Return(mockCursor, nil)
+
+		mockCursor.
+			EXPECT().
+			Next(gomock.Any()).
+			Return(false)
+
+		mockCursor.
+			EXPECT().
+			Err().
+			Return(errors.New("mocked cursor error"))
+
+		mockCursor.
+			EXPECT().
+			Close(gomock.Any()).
+			Return(nil)
+
+		users, err := repository.GetAllUsers(context.Background())
+		if err == nil {
+			t.Fatalf("Se esperaba error en cur.Err(), pero no se obtuvo")
+		}
+		if users != nil {
+			t.Fatalf("Se esperaba nil en users, pero se obtuvo: %v", users)
 		}
 	})
 

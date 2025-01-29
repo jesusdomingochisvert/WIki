@@ -5,6 +5,8 @@ import (
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/entities"
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/interfaces"
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/repositories"
+	"github.com/jesusdomingochisvert/WIki/internal/features/users/infrastructure/db/schema"
+	"github.com/jesusdomingochisvert/WIki/internal/features/users/infrastructure/mappers"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -16,20 +18,21 @@ func NewUserRepository(db interfaces.Database) repositories.UserRepository {
 	return &userRepository{collection: db.Collection("users")}
 }
 
-func (r *userRepository) GetAllUsers(ctx context.Context) ([]entities.User, error) {
+func (r *userRepository) GetAllUsers(ctx context.Context) ([]entities.UserEntity, error) {
 	cur, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
 	defer cur.Close(ctx)
 
-	var users []entities.User
+	var userEntities []entities.UserEntity
 	for cur.Next(ctx) {
-		var user entities.User
-		if err := cur.Decode(&user); err != nil {
+		var userSchema schema.UserSchema
+		if err := cur.Decode(&userSchema); err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		userEntity := mappers.FromUserSchema(userSchema)
+		userEntities = append(userEntities, userEntity)
 	}
 
 	if err := cur.Err(); err != nil {
@@ -42,5 +45,5 @@ func (r *userRepository) GetAllUsers(ctx context.Context) ([]entities.User, erro
 	default:
 	}
 
-	return users, nil
+	return userEntities, nil
 }

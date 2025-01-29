@@ -6,5 +6,5 @@ import (
 )
 
 type UserRepository interface {
-	GetAllUsers(ctx context.Context) ([]entities.User, error)
+	GetAllUsers(ctx context.Context) ([]entities.UserEntity, error)
 }

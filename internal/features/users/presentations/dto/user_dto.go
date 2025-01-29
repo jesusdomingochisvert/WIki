@@ -1,6 +1,6 @@
-package entities
+package dto
 
-type UserEntity struct {
+type UserDto struct {
 	ID       string
 	Name     string
 	Email    string

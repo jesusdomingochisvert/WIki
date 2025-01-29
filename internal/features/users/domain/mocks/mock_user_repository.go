@@ -36,10 +36,10 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 }
 
 // GetAllUsers mocks base method.
-func (m *MockUserRepository) GetAllUsers(ctx context.Context) ([]entities.User, error) {
+func (m *MockUserRepository) GetAllUsers(ctx context.Context) ([]entities.UserEntity, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllUsers", ctx)
-	ret0, _ := ret[0].([]entities.User)
+	ret0, _ := ret[0].([]entities.UserEntity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
