@@ -14,7 +14,7 @@ FROM alpine:latest AS production
 
 WORKDIR /app
 
-COPY --from=builder /app/main .
+COPY --from=builder /app/cmd/main .
 
 EXPOSE 8080
 
