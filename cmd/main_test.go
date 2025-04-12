@@ -104,7 +104,7 @@ func TestRun_Success(t *testing.T) {
 	runServerFunc = func(addr string, router *gin.Engine) error {
 		serverCalled = true
 		if addr != ":5678" {
-			return errors.New("incorrect address")
+			return errors.New("direccion incorrecta")
 		}
 		return nil
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/domain/interfaces"
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/infrastructure/repositories"
 	"github.com/jesusdomingochisvert/WIki/internal/features/users/presentations/handlers"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -105,5 +106,11 @@ func run() error {
 }
 
 func main() {
-	fmt.Println("Hello World")
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No se pudo cargar el archivo .env, se usarán las variables de entorno del sistema")
+	}
+	if err := run(); err != nil {
+		log.Fatalf("%v", err)
+	}
 }
