@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./main.go
+RUN go build -o cmd/main ./cmd/main.go
 
 FROM alpine:latest AS production
 
@@ -18,4 +18,4 @@ COPY --from=builder /app/main .
 
 EXPOSE 8080
 
-CMD ["./main.go"]
+CMD ["./cmd/main.go"]
